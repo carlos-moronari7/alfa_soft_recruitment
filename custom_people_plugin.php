@@ -23,16 +23,47 @@ class Custom_People_Management_Plugin {
         register_uninstall_hook(__FILE__, array(__CLASS__, 'uninstall')); // Using __CLASS__ for static method
     }
     
-    function activate() {
-        // Activation logic here
+     function activate() {
+        global $wpdb;
+        $charset_collate = $wpdb->get_charset_collate();
+        
+        // Create custom database tables
+        $people_table = $wpdb->prefix . 'people';
+        $contacts_table = $wpdb->prefix . 'contacts';
+
+        $sql_people = "CREATE TABLE $people_table (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            name varchar(255) NOT NULL,
+            email varchar(255) NOT NULL,
+            deleted_at datetime DEFAULT NULL,
+            PRIMARY KEY  (id)
+        ) $charset_collate;";
+        
+        $sql_contacts = "CREATE TABLE $contacts_table (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            person_id mediumint(9) NOT NULL,
+            country_code varchar(10) NOT NULL,
+            number varchar(20) NOT NULL,
+            deleted_at datetime DEFAULT NULL,
+            PRIMARY KEY  (id),
+            FOREIGN KEY (person_id) REFERENCES $people_table(id)
+        ) $charset_collate;";
+        
+        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
+        dbDelta( $sql_people );
+        dbDelta( $sql_contacts );
     }
      
     function deactivate() {
         // Deactivation logic here
     }
      
-    static function uninstall() { // Making the method static
-        // Uninstallation logic here
+    static function uninstall() { 
+        // For example, you can delete custom database tables or remove options
+        // This function is called when the plugin is uninstalled
+        global $wpdb;
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}people");
+        $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}contacts");
     }
      
     function custom_post_type() {
